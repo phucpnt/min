@@ -129,8 +129,27 @@ function setFilteringSettings (settings) {
   enabledFilteringOptions.exceptionDomains = settings.exceptionDomains.map(d => d.replace(/^www\./g, ''))
 }
 
-function registerFiltering (ses) {
-  ses.webRequest.onBeforeRequest(handleRequest)
+function registerFiltering(ses) {
+  ses.webRequest.onBeforeRequest(handleRequest);
+  ses.webRequest.onHeadersReceived(function enableCORS(details, callback) {
+    // console.info("onheaderreceived");
+    const responseHeaders = details.responseHeaders;
+    if (
+      details.referrer.indexOf("https://localhost:10786") > -1
+    ) {
+      var accessControlAllowOrigin = responseHeaders["Access-Control-Allow-Origin"] || responseHeaders["access-control-allow-origin"];
+      if (
+        !accessControlAllowOrigin ||
+        (accessControlAllowOrigin.indexOf("*") === -1 &&
+          accessControlAllowOrigin.indexOf("https://localhost:10786") === -1)
+      ) {
+        responseHeaders["Access-Control-Allow-Origin"] = [
+          "https://localhost:10786",
+        ];
+      }
+    }
+    callback({ responseHeaders: responseHeaders });
+  });
 }
 
 app.once('ready', function () {

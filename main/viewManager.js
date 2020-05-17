@@ -9,17 +9,23 @@ function createView (id, webPreferencesString, boundsString, events) {
   let view = new BrowserView(JSON.parse(webPreferencesString))
 
   events.forEach(function (event) {
-    view.webContents.on(event, function (e, url, frameName) {
-      if(frameName === "_self" || frameName ==="_blank") {
+    view.webContents.on(event, function (e) {
       /*
       new-window is special in two ways:
       * its arguments contain a webContents object that can't be serialized and needs to be removed.
       * If it is being handled by the UI process, preventDefault() needs to be called in order not to create a new window.
       */
       var args = Array.prototype.slice.call(arguments).slice(1)
-      if (event === 'new-window') {
-        e.preventDefault()
-        args = args.slice(0, 3)
+      if (event === "new-window") {
+        const [, frameName, disposition] = args;
+        let preventDefault = ["_self", "_blank"].indexOf(frameName) > -1;
+        preventDefault = preventDefault || disposition === "foreground-tab";
+        if(preventDefault) {
+          e.preventDefault();
+          args = args.slice(0, 3);
+        } else if(disposition === 'new-window') {
+          return;
+        }
       }
 
       mainWindow.webContents.send('view-event', {
@@ -27,7 +33,6 @@ function createView (id, webPreferencesString, boundsString, events) {
         event: event,
         args: args
       })
-    }
     })
   })
 
