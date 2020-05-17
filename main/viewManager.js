@@ -4,10 +4,13 @@ var viewStateMap = {} // id: view state
 const BrowserView = electron.BrowserView
 
 function createView (id, webPreferencesString, boundsString, events) {
+  console.info('createview....', id, webPreferencesString, boundsString, events);
+
   let view = new BrowserView(JSON.parse(webPreferencesString))
 
   events.forEach(function (event) {
-    view.webContents.on(event, function (e) {
+    view.webContents.on(event, function (e, url, frameName) {
+      if(frameName === "_self" || frameName ==="_blank") {
       /*
       new-window is special in two ways:
       * its arguments contain a webContents object that can't be serialized and needs to be removed.
@@ -24,6 +27,7 @@ function createView (id, webPreferencesString, boundsString, events) {
         event: event,
         args: args
       })
+    }
     })
   })
 

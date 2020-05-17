@@ -34,6 +34,7 @@
   "scripts": {
     "test": "node_modules/.bin/standard --verbose js/**/*.js main/*.js",
     "watch": "node ./scripts/watch.js",
+    "start": "electron .",
     "buildMain": "node ./scripts/buildMain.js",
     "buildBrowser": "node ./scripts/buildBrowser.js",
     "buildPreload": "node ./scripts/buildPreload.js",

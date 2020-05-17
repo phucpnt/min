@@ -213,7 +213,7 @@ const webviews = {
           contextIsolation: true,
           sandbox: true,
           enableRemoteModule: false,
-          allowPopups: false,
+          allowPopups: true,
           partition: partition,
           enableWebSQL: false
         }
@@ -485,6 +485,7 @@ webviews.bindIPC('scroll-position-change', function (webview, tabId, args) {
 })
 
 ipc.on('view-event', function (e, args) {
+  console.info('view-event', e, args);
   webviews.emitEvent(args.event, args.viewId, args.args)
 })
 
