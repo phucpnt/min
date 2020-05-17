@@ -202,6 +202,7 @@ const webviews = {
 
     ipc.send('createView', {
       id: tabId,
+      url: tabData.url,
       webPreferencesString: JSON.stringify({
         webPreferences: {
           nodeIntegration: false,

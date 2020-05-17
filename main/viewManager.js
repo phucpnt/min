@@ -3,10 +3,33 @@ var viewStateMap = {} // id: view state
 
 const BrowserView = electron.BrowserView
 
-function createView (id, webPreferencesString, boundsString, events) {
+function buildWebReferences(optionStr, url) {
+  let webPreferences = JSON.parse(optionStr);
+  if (String(url).indexOf("https://localhost:10786") > -1) {
+    webPreferences = {
+      webPreferences: {
+        ...webPreferences.webPreferences,
+        nodeIntegration: true,
+        contextIsolation: false,
+        sandbox: false,
+        enableRemoteModule: true,
+        plugins: true,
+        nativeWindowOpen: true,
+        webSecurity: false,
+        javascript: true,
+      },
+    };
+  }
+
+  console.info("web reference", webPreferences, url);
+
+  return webPreferences;
+}
+
+function createView (id, webPreferencesString, boundsString, events, url) {
   console.info('createview....', id, webPreferencesString, boundsString, events);
 
-  let view = new BrowserView(JSON.parse(webPreferencesString))
+  let view = new BrowserView(buildWebReferences(webPreferencesString, url));
 
   events.forEach(function (event) {
     view.webContents.on(event, function (e) {
@@ -131,7 +154,7 @@ function getViewIDFromWebContents (contents) {
 }
 
 ipc.on('createView', function (e, args) {
-  createView(args.id, args.webPreferencesString, args.boundsString, args.events)
+  createView(args.id, args.webPreferencesString, args.boundsString, args.events, args.url)
 })
 
 ipc.on('destroyView', function (e, id) {
