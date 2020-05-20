@@ -41,17 +41,8 @@ const PDFViewer = {
     webviews.callAsync(tabs.getSelected(), 'executeJavaScript', 'parentProcessActions.endFindInPage()')
   },
   handlePDFOpenEvent: function (event, data) {
-    // var PDFurl = PDFViewer.url.base + PDFViewer.url.queryString.replace('%l', encodeURIComponent(data.url))
     var PDFurl = 'https://localhost:10786/_invest.html/fileviewer?fileUrl=' + encodeURIComponent(data.url);
-
-    // we don't know which tab the event came from, so we loop through each tab to find out.
-
-    tabs.get().forEach(function (tab) {
-      var webview = webviews.get(tab.id)
-      if (webview && webview.id === data.webContentsId) {
-        browserUI.navigate(tab.id, PDFurl)
-      }
-    })
+    browserUI.navigate(data.tabId, PDFurl)
   },
   initialize: function () {
     ipc.on('openPDF', PDFViewer.handlePDFOpenEvent)
