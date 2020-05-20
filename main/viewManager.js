@@ -17,6 +17,8 @@ function buildWebReferences(optionStr, url) {
         nativeWindowOpen: true,
         webSecurity: false,
         javascript: true,
+        enableWebSQL: false,
+        webviewTag: true,
       },
     };
   }
