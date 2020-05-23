@@ -10,6 +10,7 @@ function buildWebReferences(optionStr, url) {
       webPreferences: {
         ...webPreferences.webPreferences,
         nodeIntegration: true,
+        nodeIntegrationInSubFrames: false,
         contextIsolation: false,
         sandbox: false,
         enableRemoteModule: true,
@@ -42,13 +43,39 @@ function createView (id, webPreferencesString, boundsString, events, url) {
       */
       var args = Array.prototype.slice.call(arguments).slice(1)
       if (event === "new-window") {
-        const [, frameName, disposition] = args;
+        const [, frameName, disposition, options] = args;
         let preventDefault = ["_self", "_blank"].indexOf(frameName) > -1;
         preventDefault = preventDefault || disposition === "foreground-tab";
         if(preventDefault) {
           e.preventDefault();
           args = args.slice(0, 3);
         } else if(disposition === 'new-window') {
+          e.preventDefault();
+          // options1 = Object.assign(options, {
+          let options1 = {
+            show: options.show,
+            x: options.x,
+            y: options.y,
+            width: options.width,
+            height: options.height,
+            webContents: options.webContents,
+            webPreferences: {
+              // ...options.webPreferences,
+              nodeIntegration: false,
+              nodeIntegrationInSubFrames: false,
+              nodeIntegrationInWorker: false,
+              enableRemoteModule: false,
+              allowRunningInsecureContent: false,
+              webSecurity: true,
+              contextIsolation: true,
+              plugins: true,
+              nativeWindowOpen: true,
+              webviewTag: false,
+              javascript: true,
+              plugins: true,
+            }
+          }
+          e.newGuest = new electron.BrowserWindow(options1);
           return;
         }
       }
