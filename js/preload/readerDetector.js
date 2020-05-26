@@ -40,6 +40,11 @@ function checkReaderStatus () {
 }
 
 if (process.isMainFrame) {
-  document.addEventListener('DOMContentLoaded', checkReaderStatus)
+  // unlike DOMContentLoaded, readystatechange doesn't wait for <script defer>, so it happens a bit sooner
+  document.addEventListener('readystatechange', function () {
+    if (document.readyState === 'interactive') {
+      checkReaderStatus()
+    }
+  })
   window.addEventListener('load', checkReaderStatus)
 }
