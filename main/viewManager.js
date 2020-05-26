@@ -24,13 +24,10 @@ function buildWebReferences(optionStr, url) {
     };
   }
 
-  console.info("web reference", webPreferences, url);
-
   return webPreferences;
 }
 
 function createView (id, webPreferencesString, boundsString, events, url) {
-  console.info('createview....', id, webPreferencesString, boundsString, events);
 
   let view = new BrowserView(buildWebReferences(webPreferencesString, url));
 

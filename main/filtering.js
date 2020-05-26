@@ -132,7 +132,6 @@ function setFilteringSettings (settings) {
 function registerFiltering(ses) {
   ses.webRequest.onBeforeRequest(handleRequest);
   ses.webRequest.onHeadersReceived(function enableCORS(details, callback) {
-    // console.info("onheaderreceived");
     const responseHeaders = details.responseHeaders;
     if (
       details.referrer.indexOf("https://localhost:10786") > -1

@@ -190,8 +190,6 @@ webviews.bindEvent('new-window', function (tabId, url, frameName, disposition) {
     private: tabs.get(tabId).private // inherit private status from the current tab
   })
 
-  console.info('new-window', tabId, url, frameName);
-
   addTab(newTab, {
     enterEditMode: false,
     openInBackground: disposition === 'background-tab' // possibly open in background based on disposition

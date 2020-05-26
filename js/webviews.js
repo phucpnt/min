@@ -500,7 +500,6 @@ webviews.bindIPC('scroll-position-change', function (tabId, args) {
 })
 
 ipc.on('view-event', function (e, args) {
-  console.info('view-event', e, args);
   webviews.emitEvent(args.event, args.viewId, args.args)
 })
 
