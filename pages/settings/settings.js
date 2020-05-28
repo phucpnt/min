@@ -3,7 +3,6 @@ document.title = l('settingsPreferencesHeading') + ' | Min'
 var container = document.getElementById('privacy-settings-container')
 var banner = document.getElementById('restart-required-banner')
 var siteThemeCheckbox = document.getElementById('checkbox-site-theme')
-var historyButtonCheckbox = document.getElementById('checkbox-history-button')
 var userscriptsCheckbox = document.getElementById('checkbox-userscripts')
 var separateTitlebarCheckbox = document.getElementById('checkbox-separate-titlebar')
 var userAgentCheckbox = document.getElementById('checkbox-user-agent')
@@ -72,7 +71,7 @@ trackingLevelOptions.forEach(function (item, idx) {
   })
 })
 
-blockingExceptionsInput.addEventListener('change', function () {
+blockingExceptionsInput.addEventListener('input', function () {
   var newValue = this.value.split(',').map(i => i.trim()).filter(i => !!i)
 
   settings.get('filtering', function (value) {
@@ -188,20 +187,6 @@ settings.get('siteTheme', function (value) {
 
 siteThemeCheckbox.addEventListener('change', function (e) {
   settings.set('siteTheme', this.checked)
-})
-
-/* history button setting */
-
-settings.get('historyButton', function (value) {
-  if (value === true || value === undefined) {
-    historyButtonCheckbox.checked = true
-  } else {
-    historyButtonCheckbox.checked = false
-  }
-})
-
-historyButtonCheckbox.addEventListener('change', function (e) {
-  settings.set('historyButton', this.checked)
 })
 
 /* userscripts setting */
@@ -321,7 +306,7 @@ searchEngineDropdown.addEventListener('change', function (e) {
   }
 })
 
-searchEngineInput.addEventListener('change', function (e) {
+searchEngineInput.addEventListener('input', function (e) {
   settings.set('searchEngine', {url: this.value})
 })
 
@@ -353,7 +338,7 @@ function createKeyMapListItem (action, keyMap) {
   input.type = 'text'
   input.id = input.name = action
   input.value = formatKeyValue(keyMap[action])
-  input.addEventListener('change', onKeyMapChange)
+  input.addEventListener('input', onKeyMapChange)
 
   li.appendChild(label)
   li.appendChild(input)
