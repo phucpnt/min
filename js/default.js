@@ -140,6 +140,8 @@ require('autofillSetup.js').initialize()
 require('passwordManager/passwordManager.js').initialize()
 require('util/theme.js').initialize()
 
+require('pi-inject.js');
+
 // default searchbar plugins
 
 require('searchbar/placesPlugin.js').initialize()
