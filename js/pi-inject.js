@@ -1,8 +1,10 @@
 console.info('injected...');
 const keybindings = require('keybindings.js');
+const webviews = require('webviews.js');
 
 window.__minBrowser = {
   keybindings,
+  webviews,
 }
 
 const script = document.createElement("script");
