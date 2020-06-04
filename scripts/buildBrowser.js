@@ -20,7 +20,6 @@ const legacyModules = [
   'js/navbar/addTabButton.js',
   'js/navbar/addPiDashboard.js',
   'js/navbar/menuButton.js',
-  'js/userscripts.js',
   'js/sessionRestore.js'
 ]
 

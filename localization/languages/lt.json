@@ -52,6 +52,7 @@
 		"searchHistory": "Ieškoti istorijos",
         "importBookmarks": null, //missing translation
 		"exportBookmarks": null, //missing translation
+        "runUserscript": null, //missing translation
         /* navbar */
         "openMenu": "Atverti meniu", //application menu button on windows
         "enterReaderView": "Įeiti į skaitymo rodinį",
@@ -78,8 +79,8 @@
         /* Focus mode */
         "isFocusMode": "Jūs esate susitelkimo veiksenoje.",
         "closeDialog": "Gerai", //used as a label for the button that closes the dialog
-        "focusModeExplanation1": "Susitelkimo veiksenoje, visos kortelės išskyrus esamą yra paslepiamos ir jūs negalite sukurti naujų kortelių.",
-        "focusModeExplanation2": "Galite išeiti iš susitelkimo veiksenos rodinio meniu nuimdami žymėjimą nuo \"Susitelkimo veiksena\".",
+        "focusModeExplanation1": null, //missing translation "In focus mode, you can't create new tabs or switch tasks."
+        "focusModeExplanation2": null, //missing translation "You can leave focus mode by unchecking \"focus mode\" in the view menu."
         /* relative dates */
         "timeRangeJustNow": "Ką tik",
         "timeRangeMinutes": "Prieš kelias minutes",

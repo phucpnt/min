@@ -2,9 +2,9 @@
 
 var webviews = require('webviews.js')
 var settings = require('util/settings/settings.js')
-
-var userScriptsEnabled = false
-var scriptList = [] // {options: {}, content}
+var bangsPlugin = require('searchbar/bangsPlugin.js')
+var tabEditor = require('navbar/tabEditor.js')
+var searchbarPlugins = require('searchbar/searchbarPlugins.js')
 
 function parseTampermonkeyFeatures (content) {
   var parsedFeatures = {}
@@ -28,6 +28,11 @@ function parseTampermonkeyFeatures (content) {
       var featureName = feature.split(' ')[0]
       var featureValue = feature.replace(featureName + ' ', '').trim()
       featureName = featureName.replace('@', '')
+
+      // special case: find the localized name for the current locale
+      if (featureName.startsWith('name:') && featureName.split(':')[1].substring(0, 2) === navigator.language.substring(0, 2)) {
+        featureName = 'name:local'
+      }
       if (parsedFeatures[featureName]) {
         parsedFeatures[featureName].push(featureValue)
       } else {
@@ -56,82 +61,130 @@ function urlMatchesPattern (url, pattern) {
   return idx !== -1
 }
 
-if (settings.get('userscriptsEnabled') === true) {
-  userScriptsEnabled = true
+const userscripts = {
+  scripts: [], // {options: {}, content}
+  loadScripts: function () {
+    userscripts.scripts = []
 
-    /* get a list of all the files */
+    var path = require('path')
+    var scriptDir = path.join(window.globalArgs['user-data-path'], 'userscripts')
 
-  var path = require('path')
-  var scriptDir = path.join(window.globalArgs['user-data-path'], 'userscripts')
-
-  fs.readdir(scriptDir, function (err, files) {
-    if (err || files.length === 0) {
-      return
-    }
+    fs.readdir(scriptDir, function (err, files) {
+      if (err || files.length === 0) {
+        return
+      }
 
       // store the scripts in memory
-    files.forEach(function (filename) {
-      if (filename.endsWith('.js')) {
-        fs.readFile(path.join(scriptDir, filename), 'utf-8', function (err, file) {
-          if (err || !file) {
-            return
-          }
-
-          var domain = filename.slice(0, -3)
-          if (domain.startsWith('www.')) {
-            domain = domain.slice(4)
-          }
-          if (!domain) {
-            return
-          }
-
-          var tampermonkeyFeatures = parseTampermonkeyFeatures(file)
-          if (tampermonkeyFeatures) {
-            scriptList.push({options: tampermonkeyFeatures, content: file})
-          } else {
-            // legacy script
-            if (domain === 'global') {
-              scriptList.push({
-                options: {
-                  match: ['*']
-                },
-                content: file
-              })
-            } else {
-              scriptList.push({
-                options: {
-                  match: ['*://' + domain]
-                },
-                content: file
-              })
+      files.forEach(function (filename) {
+        if (filename.endsWith('.js')) {
+          fs.readFile(path.join(scriptDir, filename), 'utf-8', function (err, file) {
+            if (err || !file) {
+              return
             }
-          }
-        })
-      }
+
+            var domain = filename.slice(0, -3)
+            if (domain.startsWith('www.')) {
+              domain = domain.slice(4)
+            }
+            if (!domain) {
+              return
+            }
+
+            var tampermonkeyFeatures = parseTampermonkeyFeatures(file)
+            if (tampermonkeyFeatures) {
+              var scriptName = tampermonkeyFeatures['name:local'] || tampermonkeyFeatures['name']
+              if (scriptName) {
+                scriptName = scriptName[0]
+              } else {
+                scriptName = filename
+              }
+              userscripts.scripts.push({ options: tampermonkeyFeatures, content: file, name: scriptName })
+            } else {
+              // legacy script
+              if (domain === 'global') {
+                userscripts.scripts.push({
+                  options: {
+                    match: ['*']
+                  },
+                  content: file,
+                  name: filename
+                })
+              } else {
+                userscripts.scripts.push({
+                  options: {
+                    match: ['*://' + domain]
+                  },
+                  content: file,
+                  name: filename
+                })
+              }
+            }
+          })
+        }
+      })
     })
-  })
-}
-
-/* listen for load events and execute the scripts
-this listener has to be attached immediately so that we can capture events for
-webviews that are created at startup
-*/
-
-webviews.bindEvent('dom-ready', function (tabId) {
-  if (!userScriptsEnabled) {
-    return
-  }
-
-  webviews.callAsync(tabId, 'getURL', (err, src) => {
-    if (err) {
+  },
+  runScript: function (tabId, script) {
+    webviews.callAsync(tabId, 'executeJavaScript', [script.content, false, null])
+  },
+  onPageLoad: function (tabId) {
+    if (userscripts.scripts.length === 0) {
       return
     }
-    scriptList.forEach(function (script) {
+
+    var src = tabs.get(tabId).url
+
+    userscripts.scripts.forEach(function (script) {
       if ((script.options.match && script.options.match.some(pattern => urlMatchesPattern(src, pattern))) || (script.options.include && script.options.include.some(pattern => urlMatchesPattern(src, pattern)))) {
         if (!script.options.exclude || !script.options.exclude.some(pattern => urlMatchesPattern(src, pattern))) {
-          webviews.callAsync(tabId, 'executeJavaScript', [script.content, false, null])
+          userscripts.runScript(tabId, script)
         }
       }
     })
-  })
-})
+  },
+  initialize: function () {
+    settings.listen('userscriptsEnabled', function (value) {
+      if (value === true) {
+        userscripts.loadScripts()
+      } else {
+        userscripts.scripts = []
+      }
+    })
+    webviews.bindEvent('dom-ready', userscripts.onPageLoad)
+
+    bangsPlugin.registerCustomBang({
+      phrase: '!run',
+      snippet: l('runUserscript'),
+      isAction: false,
+      showSuggestions: function (text, input, event) {
+        searchbarPlugins.reset('bangs')
+
+        var isFirst = true
+        userscripts.scripts.forEach(function (script) {
+          if (script.name.toLowerCase().startsWith(text.toLowerCase())) {
+            searchbarPlugins.addResult('bangs', {
+              title: script.name,
+              fakeFocus: isFirst && text,
+              click: function () {
+                tabEditor.hide()
+                userscripts.runScript(tabs.getSelected(), script)
+              }
+            })
+            isFirst = false
+          }
+        })
+      },
+      fn: function (text) {
+        if (!text) {
+          return
+        }
+        var matchingScript = userscripts.scripts.find(script => script.name.toLowerCase().startsWith(text.toLowerCase()))
+        if (matchingScript) {
+          userscripts.runScript(tabs.getSelected(), matchingScript)
+        }
+      }
+    })
+  }
+}
+
+module.exports = userscripts
