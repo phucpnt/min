@@ -1,5 +1,6 @@
 const settings = require('util/settings/settings.js')
 const ProcessSpawner = require('util/process.js')
+const path = require('path')
 
 // 1Password password manager. Requires session key to unlock the vault.
 class OnePassword {
@@ -22,9 +23,9 @@ class OnePassword {
         break;
     }
   }
-  
-  getFileName() {
-    return (platformType === 'windows' ? 'op.exe' : 'op')
+
+  getLocalPath() {
+    return path.join(window.globalArgs['user-data-path'], 'tools', (platformType === 'windows' ? 'op.exe' : 'op'))
   }
 
   getSetupMode() {
@@ -36,7 +37,7 @@ class OnePassword {
   // by checking the settings value. If that is not set or doesn't point
   // to a valid executable, it checks if 'op' is available globally.
   async _getToolPath() {
-    let localPath = settings.get('1PasswordPath')
+    let localPath = this.getLocalPath()
     if (localPath) {
       let local = false;
       try {
@@ -99,10 +100,13 @@ class OnePassword {
   // Loads credential suggestions for given domain name.
   async loadSuggestions(command, domain) {
     try {
+      console.log("loadSuggestions")
       let process = new ProcessSpawner(command, ['list', 'items', '--session=' + this.sessionKey])
       let data = await process.executeSyncInAsyncContext();
+      console.log("got data of length ", data.length);
 
       const matches = JSON.parse(data)
+      console.log("got matches of length", matches.length)
 
       let credentials = matches.map(match => match).filter((match) => {
         try {
@@ -119,10 +123,13 @@ class OnePassword {
       var expandedCredentials = [];
 
       for (var i = 0; i < credentials.length; i++) {
+        console.log("looking up credential, index ", i);
         let item = credentials[i]
         let process = new ProcessSpawner(command, ["get", "item", item.uuid, "--session=" + this.sessionKey])
         let output = await process.executeSyncInAsyncContext()
+        console.log("got credential output of length ", output.length);
         let credential = JSON.parse(output)
+        console.log("credential username: ", credential.details.fields.filter(f => f.name == "username")[0].value)
         expandedCredentials.push({
           username: credential.details.fields.filter(f => f.name == "username")[0].value,
           password: credential.details.fields.filter(f => f.name == "password")[0].value,
@@ -176,7 +183,6 @@ class OnePassword {
       throw new Error();
     }
 
-    settings.set('1PasswordPath', path)
     return true
   }
 }
