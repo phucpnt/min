@@ -28,7 +28,6 @@
         "suggestedSite": "Запропонований сайт", //this is used to label suggested websites from the DuckDuckGo API,
         "resultsFromDDG": "Результати із DuckDuckGo", //this is used as a label to indicate which results come from DuckDuckGo's API
         "taskN": "Завдання %n", //this is used as a way to identify which tab a task is in "task 1", "task 2", ...
-        "hostsFileEntry": "Запис із файлу hosts", //this is a label used to indicate that a result is coming from the user's host file
         /* custom !bangs
         these are some of the items that show up when you press ! in the searchbar.
         Each one of these strings describes what the command will do when you run it. */
@@ -145,6 +144,7 @@
         "settingsAdditionalFeaturesHeading": "Додаткові можливості",
         "settingsUserscriptsToggle": "Увімкнути скрипти користувача",
         "settingsSeparateTitlebarToggle": "Використовувати окремий рядок заголовка",
+		"settingsOpenTabsInForegroundToggle": "Відкриватии нові вкладки на передньому плані",
 		"settingsUserscriptsExplanation": {"unsafeHTML": "Скрипти користувача дозволяють змінювати поведінку веб-сайтів - <a href=\"https://github.com/minbrowser/min/wiki/userscripts\">дізнатися більше</a>."},
         "settingsUserAgentToggle": "Використовувати власний агент користувача",
         "settingsUpdateNotificationsToggle": "Автоматично перевіряти наявність оновлень",
