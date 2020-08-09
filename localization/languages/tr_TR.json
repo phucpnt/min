@@ -5,15 +5,18 @@
         /* Context menu items
         these are the items displayed in the menu when you right-click on a page
         */
+        "addToDictionary": null, //missing translation
         "pictureInPicture": null, //missing translation
         "openInNewTab": "Yeni Pencerede Aç",
         "openInNewPrivateTab": "Yeni Özel Sekmede Aç",
+        "saveLinkAs": null, //missing translation
         "viewImage": "Resmi Göster",
         "openImageInNewTab": "Resmi Yeni Sekmede Aç",
         "openImageInNewPrivateTab": "Resmi Yeni Özel Sekmede Aç",
         "saveImageAs": "Resmi Farklı Kaydet",
         "searchWith": "%s ile ara", //%s will be replaced with the name of the current search engine
         "copyLink": "Linki Kopyala",
+        "copyEmailAddress": null, //missing translation
         "selectAll": "Hepsini Seç",
         "undo": "Geri",
         "redo": "İleri",
@@ -24,6 +27,7 @@
         "goForward": "İleri Git",
         "inspectElement": "Öğeyi İncele",
         /* searchbar */
+        "pasteAndGo": null, //missing translation
         "DDGAnswerSubtitle": "Cevap", //this is a noun - it is used as a subtitle when displaying Instant Answers from DuckDuckGo in the searchbar
         "suggestedSite": "Önerilen site", //this is used to label suggested websites from the DuckDuckGo API,
         "resultsFromDDG": "DuckDuckGo'dan sonuçlar", //this is used as a label to indicate which results come from DuckDuckGo's API

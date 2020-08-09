@@ -5,15 +5,18 @@
 		/* Context menu items
         these are the items displayed in the menu when you right-click on a page
         */
-		"pictureInPicture": "Rasmda rasm",
+		"addToDictionary": null, //missing translation
+        "pictureInPicture": "Rasmda rasm",
 		"openInNewTab": "Havolani yangi varaqda ochish",
 		"openInNewPrivateTab": "Havolani yangi maxfiy oynada ochish",
+        "saveLinkAs": null, //missing translation
 		"viewImage": "Rasmni ko'rish",
 		"openImageInNewTab": "Rasmni yangi varaqda ochish",
 		"openImageInNewPrivateTab": "Rasmni yangi maxfiy varaqda ochish",
 		"saveImageAs": "Rasmni saqlash",
 		"searchWith": "%s bilan izlash", //%s will be replaced with the name of the current search engine
 		"copyLink": "Havoladan nusxa olish",
+        "copyEmailAddress": null, //missing translation
 		"selectAll": "Barchasini tanlash",
 		"undo": "Bekor qilish",
 		"redo": "Qayta qilish",
@@ -24,6 +27,7 @@
 		"goForward": "",
 		"inspectElement": "Elementni kuzatish",
 		/* searchbar */
+		"pasteAndGo": null, //missing translation
 		"DDGAnswerSubtitle": "Javob", //this is a noun - it is used as a subtitle when displaying Instant Answers from DuckDuckGo in the searchbar
 		"suggestedSite": "Taklif qilingan sahifa", //this is used to label suggested websites from the DuckDuckGo API,
 		"resultsFromDDG": "DuckDuckGo dan javoblar", //this is used as a label to indicate which results come from DuckDuckGo's API

@@ -5,15 +5,18 @@
         /* Context menu items
         these are the items displayed in the menu when you right-click on a page
         */
+        "addToDictionary": null, //missing translation
         "pictureInPicture": null, //missing translation
         "openInNewTab": "باز کردن در برگه جدید",
         "openInNewPrivateTab": "باز کردن در برگه خصوصی جدید",
+        "saveLinkAs": null, //missing translation
         "viewImage": "نمایش تصویر",
         "openImageInNewTab": "باز کردن تصویر در برگه جدید",
         "openImageInNewPrivateTab": "باز کردن تصویر در برگه خصوصی جدید",
         "saveImageAs": "ذخیره تصویر",
         "searchWith": "جستجو با %s", //%s will be replaced with the name of the current search engine
         "copyLink": "کپی لینک",
+        "copyEmailAddress": null, //missing translation
         "selectAll": null, // Missing Translation
         "undo": null, // Missing Translation
         "redo": null, // Missing Translation
@@ -24,6 +27,7 @@
         "goForward": "جلو",
         "inspectElement": "وارسی",
         /* searchbar */
+        "pasteAndGo": null, //missing translation
         "DDGAnswerSubtitle": "پاسخ", //this is a noun - it is used as a subtitle when displaying Instant Answers from DuckDuckGo in the searchbar
         "suggestedSite": "سایت پیشنهادی", //this is used to label suggested websites from the DuckDuckGo API,
         "resultsFromDDG": "نتایج از DuckDuckGo", //this is used as a label to indicate which results come from DuckDuckGo's API

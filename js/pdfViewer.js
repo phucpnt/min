@@ -5,8 +5,10 @@ const urlParser = require('util/urlParser.js')
 
 const PDFViewer = {
   url: {
-    base: urlParser.getFileURL(__dirname + '/pages/pdfViewer/index.html'),
-    queryString: '?url=%l'
+    base: 'https://localhost:10786/_invest.html/fileviewer',
+    queryString: '?fileUrl=%l'
+    // base: urlParser.getFileURL(__dirname + '/pages/pdfViewer/index.html'),
+    // queryString: '?url=%l'
   },
   isPDFViewer: function (tabId) {
     return tabs.get(tabId).url.startsWith(PDFViewer.url.base)
@@ -40,7 +42,17 @@ const PDFViewer = {
     webviews.callAsync(tabs.getSelected(), 'executeJavaScript', 'parentProcessActions.endFindInPage()')
   },
   handlePDFOpenEvent: function (event, data) {
-    var PDFurl = 'https://localhost:10786/_invest.html/fileviewer?fileUrl=' + encodeURIComponent(data.url);
+    if (!data.tabId) {
+      var matchingTabs = tabs.get().filter(t => t.url === data.url).sort((a, b) => { return b.lastActivity - a.lastActivity })
+      if (matchingTabs[0]) {
+        data.tabId = matchingTabs[0].id
+      }
+    }
+    if (!data.tabId) {
+      console.warn('missing tab ID for PDF', data.url, tabs.get().map(t => t.url))
+      return
+    }
+    var PDFurl = PDFViewer.url.base + PDFViewer.url.queryString.replace('%l', encodeURIComponent(data.url))
     webviews.update(data.tabId, PDFurl)
   },
   initialize: function () {

@@ -5,15 +5,18 @@
         /* Context menu items
         these are the items displayed in the menu when you right-click on a page
         */
+        "addToDictionary": null, //missing translation
         "pictureInPicture": null, //missing translation
         "openInNewTab": "Ouvrir dans un nouvel onglet",
         "openInNewPrivateTab": "Ouvrir dans un onglet de navigation privée",
+        "saveLinkAs": null, //missing translation
         "viewImage": "Voir l'image",
         "openImageInNewTab": "Ouvrir l'image dans un nouvel onglet",
         "openImageInNewPrivateTab": "Ouvrir l'image dans un onglet de navigation privée",
         "saveImageAs": "Enregistrer l'image sous",
         "searchWith": "Rechercher avec %s", //%s will be replaced with the name of the current search engine
         "copyLink": "Copier le lien",
+        "copyEmailAddress": null, //missing translation
         "selectAll": "Tout sélectionner",
         "undo": "Annuler",
         "redo": "Rétablir",
@@ -24,6 +27,7 @@
         "goForward": "Avancer",
         "inspectElement": "Inspecter l'élément",
         /* searchbar */
+        "pasteAndGo": null, //missing translation
         "DDGAnswerSubtitle": "Réponse", //this is a noun - it is used as a subtitle when displaying Instant Answers from DuckDuckGo in the searchbar
         "suggestedSite": "Site suggéré", //this is used to label suggested websites from the DuckDuckGo API,
         "resultsFromDDG": "Résultats de DuckDuckGo", //this is used as a label to indicate which results come from DuckDuckGo's API

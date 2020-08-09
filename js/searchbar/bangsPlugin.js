@@ -2,7 +2,7 @@ var tabEditor = require('navbar/tabEditor.js')
 
 var searchbar = require('searchbar/searchbar.js')
 var searchbarPlugins = require('searchbar/searchbarPlugins.js')
-var searchbarAutocomplete = require('searchbar/searchbarAutocomplete.js')
+var searchbarAutocomplete = require('util/autocomplete.js')
 
 var searchEngine = require('util/searchEngine.js')
 
@@ -17,7 +17,7 @@ function registerCustomBang (data) {
     phrase: data.phrase,
     snippet: data.snippet,
     score: data.score || 256000,
-    icon: data.icon || 'fa-terminal',
+    icon: data.icon || 'carbon:terminal',
     showSuggestions: data.showSuggestions,
     fn: data.fn,
     isCustom: true,
@@ -87,7 +87,6 @@ function showBangSearchResults (text, results, input, event, limit = 5) {
   })
 
   results.slice(0, limit).forEach(function (result, idx) {
-
     // autocomplete the bang, but allow the user to keep typing
 
     var data = {
@@ -170,7 +169,7 @@ function getBangSearchResults (text, input, event) {
       showBangSearchResults(text, results, input, event, 4)
       searchbarPlugins.addResult('bangs', {
         title: l('showMoreBangs'),
-        icon: 'fa-angle-down',
+        icon: 'carbon:chevron-down',
         click: function () {
           showBangSearchResults(text, results, input, event, Infinity)
         }
@@ -214,4 +213,4 @@ function initialize () {
   })
 }
 
-module.exports = {initialize, registerCustomBang}
+module.exports = { initialize, registerCustomBang }

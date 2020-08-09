@@ -5,15 +5,18 @@
         /* Context menu items
         these are the items displayed in the menu when you right-click on a page
         */
+        "addToDictionary": null, //missing translation
         "pictureInPicture": null, //missing translation
         "openInNewTab": "Mở trong tab mới",
         "openInNewPrivateTab": "Mở trong tab riêng tư mới",
+        "saveLinkAs": null, //missing translation
         "viewImage": "Xem ảnh",
         "openImageInNewTab": "Mở ảnh trong tab mới",
         "openImageInNewPrivateTab": "Mở ảnh trong tab riêng tư mới",
         "saveImageAs": "Lưu ảnh thành",
         "searchWith": "Tìm kiếm với %s", //%s will be replaced with the name of the current search engine
         "copyLink": "Chép liên kết",
+        "copyEmailAddress": null, //missing translation
         "selectAll": "Chọn tất cả", 
         "undo": "Hoàn tác", 
         "redo": "Làm lại", 
@@ -24,6 +27,7 @@
         "goForward": "Đi tiếp trang sau",
         "inspectElement": "Kiểm tra thành phần",
         /* searchbar */
+        "pasteAndGo": null, //missing translation
         "DDGAnswerSubtitle": "Câu trả lời", //this is a noun - it is used as a subtitle when displaying Instant Answers from DuckDuckGo in the searchbar
         "suggestedSite": "Trang web đề xuất", //this is used to label suggested websites from the DuckDuckGo API,
         "resultsFromDDG": "Kết quả từ DuckDuckGo", //this is used as a label to indicate which results come from DuckDuckGo's API

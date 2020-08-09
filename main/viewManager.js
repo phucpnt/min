@@ -34,9 +34,7 @@ function createView (id, webPreferencesString, boundsString, events, url) {
   events.forEach(function (event) {
     view.webContents.on(event, function (e) {
       /*
-      new-window is special in two ways:
-      * its arguments contain a webContents object that can't be serialized and needs to be removed.
-      * If it is being handled by the UI process, preventDefault() needs to be called in order not to create a new window.
+      new-window is special because its arguments contain a webContents object that can't be serialized and needs to be removed.
       */
       var args = Array.prototype.slice.call(arguments).slice(1)
       if (event === "new-window") {
@@ -85,6 +83,19 @@ function createView (id, webPreferencesString, boundsString, events, url) {
     })
   })
 
+  /*
+  Workaround for crashes when calling preventDefault() on the new-window event (https://github.com/electron/electron/issues/23859#issuecomment-650270680)
+  Calling preventDefault also prevents the new-window event from occurring, so create a new event here instead
+  */
+  view.webContents.on('-will-add-new-contents', function (e, url) {
+    e.preventDefault()
+    mainWindow.webContents.send('view-event', {
+      viewId: id,
+      event: 'new-window',
+      args: [url, '', 'new-window']
+    })
+  })
+
   view.webContents.on('ipc-message', function (e, channel, data) {
     mainWindow.webContents.send('view-ipc', {
       id: id,
@@ -124,6 +135,10 @@ function createView (id, webPreferencesString, boundsString, events, url) {
 }
 
 function destroyView (id) {
+  if (!viewMap[id]) {
+    return
+  }
+
   // destroy an associated partition
 
   var partition = viewMap[id].webContents.getWebPreferences().partition
@@ -149,7 +164,9 @@ function setView (id) {
 }
 
 function setBounds (id, bounds) {
-  viewMap[id].setBounds(bounds)
+  if (viewMap[id]) {
+    viewMap[id].setBounds(bounds)
+  }
 }
 
 function focusView (id) {
