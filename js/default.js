@@ -153,6 +153,7 @@ require('statistics.js').initialize()
 require('taskOverlay/taskOverlay.js').initialize()
 require('sessionRestore.js').initialize()
 
+require('navbar/addPiDashboard.js').initialize()
 require('pi-inject.js');
 
 // default searchbar plugins
