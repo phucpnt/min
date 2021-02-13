@@ -74,17 +74,15 @@ for (const e in searchEngines) {
 }
 
 settings.listen('searchEngine', function (value) {
-  if (typeof value === 'string') {
-    // migrate from legacy format
-    value = { name: value }
-    settings.set('searchEngine', value)
-  }
-
   if (value && value.name) {
     currentSearchEngine = searchEngines[value.name]
   } else if (value && value.url) {
+    var searchDomain
+    try {
+      searchDomain = new URL(value.url).hostname.replace('www.', '')
+    } catch (e) {}
     currentSearchEngine = {
-      name: 'custom',
+      name: searchDomain || 'custom',
       searchURL: value.url,
       custom: true
     }

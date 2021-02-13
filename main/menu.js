@@ -42,23 +42,20 @@ function buildAppMenu (options = {}) {
   var personalDataItems = [
     {
       label: l('appMenuBookmarks'),
-      accelerator: undefined,
-      click: function (item, window) {
-        sendIPCToWindow(window, 'showBookmarks')
+      accelerator: 'CmdOrCtrl+b',
+      click: function (item, window, event) {
+        if (!event.triggeredByAccelerator) {
+          sendIPCToWindow(window, 'showBookmarks')
+        }
       }
     },
     {
       label: l('appMenuHistory'),
-      accelerator: undefined,
-      click: function (item, window) {
-        sendIPCToWindow(window, 'showHistory')
-      }
-    },
-    {
-      label: l('appMenuReadingList'),
-      accelerator: undefined,
-      click: function (item, window) {
-        sendIPCToWindow(window, 'showReadingList')
+      accelerator: 'Shift+CmdOrCtrl+h',
+      click: function (item, window, event) {
+        if (!event.triggeredByAccelerator) {
+          sendIPCToWindow(window, 'showHistory')
+        }
       }
     }
   ]
@@ -66,71 +63,77 @@ function buildAppMenu (options = {}) {
   var quitAction = {
     label: l('appMenuQuit').replace('%n', app.name),
     accelerator: 'CmdOrCtrl+Q',
-    click: function () {
-      app.quit()
+    click: function (item, window, event) {
+      if (!event.triggeredByAccelerator) {
+        app.quit()
+      }
+    }
+  }
+
+  var preferencesAction = {
+    label: l('appMenuPreferences'),
+    accelerator: 'CmdOrCtrl+,',
+    click: function (item, window) {
+      sendIPCToWindow(window, 'addTab', {
+        url: 'file://' + __dirname + '/pages/settings/index.html'
+      })
     }
   }
 
   var template = [
     ...(options.secondary ? tabTaskActions : []),
-    ...(options.secondary ? [{type: 'separator'}] : []),
+    ...(options.secondary ? [{ type: 'separator' }] : []),
     ...(options.secondary ? personalDataItems : []),
-    ...(options.secondary ? [{type: 'separator'}] : []),
-    ...(process.platform === 'darwin' ?
-    [
-      {
-        label: app.name,
-        submenu: [
-          {
-            label: l('appMenuAbout').replace('%n', app.name),
-            role: 'about'
-          },
-          {
-            type: 'separator'
-          },
-          {
-            label: l('appMenuPreferences'),
-            accelerator: 'CmdOrCtrl+,',
-            click: function (item, window) {
-              sendIPCToWindow(window, 'addTab', {
-                url: 'file://' + __dirname + '/pages/settings/index.html'
-              })
-            }
-          },
-          {
-            label: 'Services',
-            role: 'services',
-            submenu: []
-          },
-          {
-            type: 'separator'
-          },
-          {
-            label: l('appMenuHide').replace('%n', app.name),
-            accelerator: 'CmdOrCtrl+H',
-            role: 'hide'
-          },
-          {
-            label: l('appMenuHideOthers'),
-            accelerator: 'CmdOrCtrl+Shift+H',
-            role: 'hideothers'
-          },
-          {
-            label: l('appMenuShowAll'),
-            role: 'unhide'
-          },
-          {
-            type: 'separator'
-          },
-          quitAction
-        ]
-      }
-    ] : []),
+    ...(options.secondary ? [{ type: 'separator' }] : []),
+    ...(options.secondary ? [preferencesAction] : []),
+    ...(options.secondary ? [{ type: 'separator' }] : []),
+    ...(process.platform === 'darwin'
+      ? [
+        {
+          label: app.name,
+          submenu: [
+            {
+              label: l('appMenuAbout').replace('%n', app.name),
+              role: 'about'
+            },
+            {
+              type: 'separator'
+            },
+            preferencesAction,
+            {
+              label: 'Services',
+              role: 'services',
+              submenu: []
+            },
+            {
+              type: 'separator'
+            },
+            {
+              label: l('appMenuHide').replace('%n', app.name),
+              accelerator: 'CmdOrCtrl+H',
+              role: 'hide'
+            },
+            {
+              label: l('appMenuHideOthers'),
+              accelerator: 'CmdOrCtrl+Shift+H',
+              role: 'hideothers'
+            },
+            {
+              label: l('appMenuShowAll'),
+              role: 'unhide'
+            },
+            {
+              type: 'separator'
+            },
+            quitAction
+          ]
+        }
+      ] : []),
     {
       label: l('appMenuFile'),
       submenu: [
         ...(!options.secondary ? tabTaskActions : []),
-        ...(!options.secondary ? [{type: 'separator'}] : []),
+        ...(!options.secondary ? [{ type: 'separator' }] : []),
         {
           label: l('appMenuSavePageAs'),
           accelerator: 'CmdOrCtrl+s',
@@ -148,8 +151,8 @@ function buildAppMenu (options = {}) {
             sendIPCToWindow(window, 'print')
           }
         },
-        ...(process.platform === 'linux' ? [{type: 'separator'}] : []),
-        ...(process.platform === 'linux' ? [quitAction] : [])
+        ...(!options.secondary && process.platform === 'linux' ? [{ type: 'separator' }] : []),
+        ...(!options.secondary && process.platform === 'linux' ? [quitAction] : [])
       ]
     },
     {
@@ -198,23 +201,15 @@ function buildAppMenu (options = {}) {
             sendIPCToWindow(window, 'findInPage')
           }
         },
-        ...(process.platform !== 'darwin' ? [{type: 'separator'}] : []),
-        ...(process.platform !== 'darwin' ? [{
-          label: l('appMenuPreferences'),
-          accelerator: 'CmdOrCtrl+,',
-          click: function (item, window) {
-            sendIPCToWindow(window, 'addTab', {
-              url: 'file://' + __dirname + '/pages/settings/index.html'
-            })
-          }
-        }] : [])
+        ...(!options.secondary && process.platform !== 'darwin' ? [{ type: 'separator' }] : []),
+        ...(!options.secondary && process.platform !== 'darwin' ? [preferencesAction] : [])
       ]
     },
     {
       label: l('appMenuView'),
       submenu: [
         ...(!options.secondary ? personalDataItems : []),
-        ...(!options.secondary ? [{type: 'separator'}] : []),
+        ...(!options.secondary ? [{ type: 'separator' }] : []),
         {
           label: l('appMenuZoomIn'),
           accelerator: 'CmdOrCtrl+Plus',
@@ -257,10 +252,7 @@ function buildAppMenu (options = {}) {
         {
           label: l('appMenuFullScreen'),
           accelerator: (function () {
-            if (process.platform == 'darwin')
-              return 'Ctrl+Command+F'
-            else
-              return 'F11'
+            if (process.platform == 'darwin') { return 'Ctrl+Command+F' } else { return 'F11' }
           })(),
           role: 'togglefullscreen'
         }
@@ -272,10 +264,7 @@ function buildAppMenu (options = {}) {
         {
           label: l('appMenuInspectPage'),
           accelerator: (function () {
-            if (process.platform == 'darwin')
-              return 'Cmd+Alt+I'
-            else
-              return 'Ctrl+Shift+I'
+            if (process.platform == 'darwin') { return 'Cmd+Alt+I' } else { return 'Ctrl+Shift+I' }
           })(),
           click: function (item, window) {
             sendIPCToWindow(window, 'inspectPage')
@@ -296,6 +285,9 @@ function buildAppMenu (options = {}) {
         },
         {
           label: l('appMenuInspectBrowser'),
+          accelerator: (function () {
+            if (process.platform === 'darwin') { return 'Shift+Cmd+Alt+I' } else { return 'Ctrl+Shift+Alt+I' }
+          })(),
           click: function (item, focusedWindow) {
             if (focusedWindow) focusedWindow.toggleDevTools()
           }
@@ -378,7 +370,7 @@ function buildAppMenu (options = {}) {
             openTabInWindow('https://github.com/minbrowser/min')
           }
         },
-        ...(process.platform !== 'darwin' ? [{type: 'separator'}] : []),
+        ...(process.platform !== 'darwin' ? [{ type: 'separator' }] : []),
         ...(process.platform !== 'darwin' ? [{
           label: l('appMenuAbout').replace('%n', app.name),
           click: function (item, window) {
@@ -395,7 +387,9 @@ function buildAppMenu (options = {}) {
           }
         }] : [])
       ]
-    }
+    },
+    ...(options.secondary && process.platform !== 'darwin' ? [{ type: 'separator' }] : []),
+    ...(options.secondary && process.platform !== 'darwin' ? [quitAction] : [])
   ]
   return Menu.buildFromTemplate(template)
 }

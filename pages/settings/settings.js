@@ -1,8 +1,9 @@
 document.title = l('settingsPreferencesHeading') + ' | Min'
 
-var container = document.getElementById('privacy-settings-container')
+var contentTypeBlockingContainer = document.getElementById('content-type-blocking')
 var banner = document.getElementById('restart-required-banner')
 var siteThemeCheckbox = document.getElementById('checkbox-site-theme')
+var showDividerCheckbox = document.getElementById('checkbox-show-divider')
 var userscriptsCheckbox = document.getElementById('checkbox-userscripts')
 var separateTitlebarCheckbox = document.getElementById('checkbox-separate-titlebar')
 var openTabsInForegroundCheckbox = document.getElementById('checkbox-open-tabs-in-foreground')
@@ -11,7 +12,13 @@ var userAgentInput = document.getElementById('input-user-agent')
 
 function showRestartRequiredBanner () {
   banner.hidden = false
+  settings.set('restartNow', true)
 }
+settings.get('restartNow', (value) => {
+    if(value === true) {
+        showRestartRequiredBanner()
+    }
+})
 
 /* content blocking settings */
 
@@ -19,6 +26,18 @@ var trackingLevelContainer = document.getElementById('tracking-level-container')
 var trackingLevelOptions = Array.from(trackingLevelContainer.querySelectorAll('input[name=blockingLevel]'))
 var blockingExceptionsContainer = document.getElementById('content-blocking-information')
 var blockingExceptionsInput = document.getElementById('content-blocking-exceptions')
+var blockedRequestCount = document.querySelector('#content-blocking-blocked-requests strong')
+
+settings.listen('filteringBlockedCount', function (value) {
+  var count = value || 0
+  var valueStr
+  if (count > 50000) {
+    valueStr = new Intl.NumberFormat(navigator.locale, { notation: 'compact', maximumSignificantDigits: 4 }).format(count)
+  } else {
+    valueStr = new Intl.NumberFormat().format(count)
+  }
+  blockedRequestCount.textContent = valueStr
+})
 
 function updateBlockingLevelUI (level) {
   var radio = trackingLevelOptions[level]
@@ -30,6 +49,11 @@ function updateBlockingLevelUI (level) {
     blockingExceptionsContainer.hidden = false
     radio.parentNode.appendChild(blockingExceptionsContainer)
   }
+
+  if (document.querySelector('#tracking-level-container .setting-option.selected')) {
+    document.querySelector('#tracking-level-container .setting-option.selected').classList.remove('selected')
+  }
+  radio.parentNode.classList.add('selected')
 }
 
 function changeBlockingLevelSetting (level) {
@@ -41,6 +65,10 @@ function changeBlockingLevelSetting (level) {
     settings.set('filtering', value)
     updateBlockingLevelUI(level)
   })
+}
+
+function setExceptionInputSize () {
+  blockingExceptionsInput.style.height = (blockingExceptionsInput.scrollHeight + 2) + 'px'
 }
 
 settings.get('filtering', function (value) {
@@ -63,6 +91,7 @@ settings.get('filtering', function (value) {
 
   if (value && value.exceptionDomains && value.exceptionDomains.length > 0) {
     blockingExceptionsInput.value = value.exceptionDomains.join(', ') + ', '
+    setExceptionInputSize()
   }
 })
 
@@ -73,7 +102,10 @@ trackingLevelOptions.forEach(function (item, idx) {
 })
 
 blockingExceptionsInput.addEventListener('input', function () {
-  var newValue = this.value.split(',').map(i => i.trim()).filter(i => !!i)
+  setExceptionInputSize()
+
+  // remove protocols because of https://github.com/minbrowser/min/issues/1428
+  var newValue = this.value.split(',').map(i => i.trim().replace('http://', '').replace('https://', '')).filter(i => !!i)
 
   settings.get('filtering', function (value) {
     if (!value) {
@@ -88,14 +120,14 @@ blockingExceptionsInput.addEventListener('input', function () {
 
 var contentTypes = {
   // humanReadableName: contentType
-  'scripts': 'script',
-  'images': 'image'
+  scripts: 'script',
+  images: 'image'
 }
 
 // used for showing localized strings
 var contentTypeSettingNames = {
-  'scripts': 'settingsBlockScriptsToggle',
-  'images': 'settingsBlockImagesToggle'
+  scripts: 'settingsBlockScriptsToggle',
+  images: 'settingsBlockImagesToggle'
 }
 
 for (var contentType in contentTypes) {
@@ -123,7 +155,7 @@ for (var contentType in contentTypes) {
       section.appendChild(checkbox)
       section.appendChild(label)
 
-      container.appendChild(section)
+      contentTypeBlockingContainer.appendChild(section)
 
       checkbox.addEventListener('change', function (e) {
         settings.get('filtering', function (value) {
@@ -202,6 +234,18 @@ userscriptsCheckbox.addEventListener('change', function (e) {
   settings.set('userscriptsEnabled', this.checked)
 })
 
+/* show divider between tabs setting */
+
+settings.get('showDividerBetweenTabs', function (value) {
+  if (value === true) {
+    showDividerCheckbox.checked = true
+  }
+})
+
+showDividerCheckbox.addEventListener('change', function (e) {
+  settings.set('showDividerBetweenTabs', this.checked)
+})
+
 /* separate titlebar setting */
 
 if (navigator.platform.includes('Linux')) {
@@ -231,23 +275,22 @@ openTabsInForegroundCheckbox.addEventListener('change', function (e) {
   settings.set('openTabsInForeground', this.checked)
 })
 
-
 /* user agent settting */
 
 settings.get('customUserAgent', function (value) {
   if (value) {
     userAgentCheckbox.checked = true
-    userAgentInput.style.opacity = 1
+    userAgentInput.style.visibility = 'visible'
     userAgentInput.value = value
   }
 })
 
 userAgentCheckbox.addEventListener('change', function (e) {
   if (this.checked) {
-    userAgentInput.style.opacity = 1
+    userAgentInput.style.visibility = 'visible'
   } else {
     settings.set('customUserAgent', null)
-    userAgentInput.style.opacity = 0
+    userAgentInput.style.visibility = 'hidden'
     showRestartRequiredBanner()
   }
 })
@@ -275,6 +318,22 @@ settings.get('updateNotificationsEnabled', function (value) {
 
 updateNotificationsCheckbox.addEventListener('change', function (e) {
   settings.set('updateNotificationsEnabled', this.checked)
+})
+
+/* usage statistics setting */
+
+var usageStatisticsCheckbox = document.getElementById('checkbox-usage-statistics')
+
+settings.get('collectUsageStats', function (value) {
+  if (value === false) {
+    usageStatisticsCheckbox.checked = false
+  } else {
+    usageStatisticsCheckbox.checked = true
+  }
+})
+
+usageStatisticsCheckbox.addEventListener('change', function (e) {
+  settings.set('collectUsageStats', this.checked)
 })
 
 /* default search engine setting */
@@ -315,12 +374,12 @@ searchEngineDropdown.addEventListener('change', function (e) {
     searchEngineInput.hidden = false
   } else {
     searchEngineInput.hidden = true
-    settings.set('searchEngine', {name: this.value})
+    settings.set('searchEngine', { name: this.value })
   }
 })
 
 searchEngineInput.addEventListener('input', function (e) {
-  settings.set('searchEngine', {url: this.value})
+  settings.set('searchEngine', { url: this.value })
 })
 
 /* key map settings */
@@ -412,26 +471,136 @@ function onKeyMapChange (e) {
 /* Password auto-fill settings  */
 
 var passwordManagersDropdown = document.getElementById('selected-password-manager')
+for (var manager in passwordManagers) {
+  var item = document.createElement('option')
+  item.textContent = passwordManagers[manager].name
+  passwordManagersDropdown.appendChild(item)
+}
 
-settings.onLoad(function () {
-  for (var manager in passwordManagers) {
-    var item = document.createElement('option')
-    item.textContent = passwordManagers[manager].name
-
-    if (manager == currentPasswordManager.name) {
-      item.setAttribute('selected', 'true')
-    }
-
-    passwordManagersDropdown.appendChild(item)
-  }
+settings.listen('passwordManager', function (value) {
+  passwordManagersDropdown.value = currentPasswordManager.name
 })
 
 passwordManagersDropdown.addEventListener('change', function (e) {
   if (this.value === 'none') {
-    settings.set('passwordManager', null)
-    currentPasswordManager = null
+    settings.set('passwordManager', { name: 'none' })
   } else {
     settings.set('passwordManager', { name: this.value })
-    currentPasswordManager = this.value
   }
 })
+
+var keychainViewLink = document.getElementById('keychain-view-link')
+
+keychainViewLink.addEventListener('click', function () {
+  postMessage({ message: 'showCredentialList' })
+})
+
+settings.listen('passwordManager', function (value) {
+  keychainViewLink.hidden = !(currentPasswordManager.name === 'Built-in password manager')
+})
+
+/* proxy settings */
+
+const proxyTypeInput = document.getElementById('selected-proxy-type')
+const proxyInputs = Array.from(document.querySelectorAll('#proxy-settings-container input'))
+
+const toggleProxyOptions = proxyType => {
+  document.getElementById('manual-proxy-section').hidden = proxyType != 1
+  document.getElementById('pac-option').hidden = proxyType != 2
+}
+
+const setProxy = (key, value) => {
+  settings.get('proxy', (proxy = {}) => {
+    proxy[key] = value
+    settings.set('proxy', proxy)
+  })
+}
+
+settings.get('proxy', (proxy = {}) => {
+  toggleProxyOptions(proxy.type)
+
+  proxyTypeInput.options.selectedIndex = proxy.type || 0
+  proxyInputs.forEach(item => item.value = proxy[item.name] || '')
+})
+
+proxyTypeInput.addEventListener('change', e => {
+  const proxyType = e.target.options.selectedIndex
+  setProxy('type', proxyType)
+  toggleProxyOptions(proxyType)
+})
+
+proxyInputs.forEach(item => item.addEventListener('change', e => setProxy(e.target.name, e.target.value)))
+
+settings.get('customBangs', (value) => {
+  const bangslist = document.getElementById('custom-bangs')
+
+  if (value) {
+    value.forEach(function (bang) {
+      bangslist.appendChild(createBang(bang.phrase, bang.snippet, bang.redirect))
+    })
+  }
+})
+
+document.getElementById('add-custom-bang').addEventListener('click', function () {
+  const bangslist = document.getElementById('custom-bangs')
+  bangslist.appendChild(createBang())
+})
+
+function createBang (bang, snippet, redirect) {
+  var li = document.createElement('li')
+  var bangInput = document.createElement('input')
+  var snippetInput = document.createElement('input')
+  var redirectInput = document.createElement('input')
+  var xButton = document.createElement('button')
+  var current = { phrase: bang ?? '', snippet: snippet ?? '', redirect: redirect ?? '' }
+  function update (key, input) {
+    settings.get('customBangs', function (d) {
+      const filtered = d ? d.filter((bang) => bang.phrase !== current.phrase && (key !== 'phrase' || bang.phrase !== input.value)) : []
+      filtered.push({ phrase: bangInput.value, snippet: snippetInput.value, redirect: redirectInput.value })
+      settings.set('customBangs', filtered)
+      current[key] = input.value
+    })
+  }
+
+  bangInput.type = 'text'
+  snippetInput.type = 'text'
+  redirectInput.type = 'text'
+  bangInput.value = bang ?? ''
+  snippetInput.value = snippet ?? ''
+  redirectInput.value = redirect ?? ''
+  xButton.className = 'i carbon:close custom-bang-delete-button'
+
+  bangInput.placeholder = l('settingsCustomBangsPhrase')
+  snippetInput.placeholder = l('settingsCustomBangsSnippet')
+  redirectInput.placeholder = l('settingsCustomBangsRedirect')
+  xButton.addEventListener('click', function () {
+    li.remove()
+    settings.get('customBangs', (d) => {
+      settings.set('customBangs', d.filter((bang) => bang.phrase !== bangInput.value))
+    })
+    showRestartRequiredBanner()
+  })
+
+  bangInput.addEventListener('change', function () {
+    if (this.value.startsWith('!')) {
+      this.value = this.value.slice(1)
+    }
+    update('phrase', bangInput)
+    showRestartRequiredBanner()
+  })
+  snippetInput.addEventListener('change', function () {
+    update('snippet', snippetInput)
+    showRestartRequiredBanner()
+  })
+  redirectInput.addEventListener('change', function () {
+    update('redirect', redirectInput)
+    showRestartRequiredBanner()
+  })
+
+  li.appendChild(bangInput)
+  li.appendChild(snippetInput)
+  li.appendChild(redirectInput)
+  li.appendChild(xButton)
+
+  return li
+}

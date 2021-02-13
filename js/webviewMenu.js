@@ -1,4 +1,4 @@
-const clipboard = remote.clipboard
+const clipboard = electron.clipboard
 
 const webviews = require('webviews.js')
 const browserUI = require('browserUI.js')
@@ -24,7 +24,7 @@ const webviewMenu = {
         {
           label: l('pictureInPicture'),
           click: function () {
-            webviews.callAsync(tabs.getSelected(), 'send', ['enterPictureInPicture', {x: data.x, y: data.y}])
+            webviews.callAsync(tabs.getSelected(), 'send', ['enterPictureInPicture', { x: data.x, y: data.y }])
           }
         }
       ])
@@ -48,7 +48,7 @@ const webviewMenu = {
         suggestionEntries.push({
           label: l('addToDictionary'),
           click: function () {
-            remote.session.defaultSession.addWordToSpellCheckerDictionary(data.misspelledWord)
+            remote.session.fromPartition('persist:webcontent').addWordToSpellCheckerDictionary(data.misspelledWord)
           }
         })
       }
@@ -169,8 +169,6 @@ const webviewMenu = {
               enterEditMode: false,
               openInBackground: openInBackground
             })
-
-            webviews.get(newTab).focus()
           }
         }
       ]
@@ -199,19 +197,19 @@ const webviewMenu = {
       clipboardActions.push({
         label: l('paste'),
         click: function () {
-          webviews.get(tabs.getSelected()).paste()
+          webviews.callAsync(tabs.getSelected(), 'paste')
         }
       })
     }
 
     if (link || (mediaURL && !mediaURL.startsWith('blob:'))) {
-      if (link.startsWith('mailto:')) {
+      if (link && link.startsWith('mailto:')) {
         var ematch = link.match(/(?<=mailto:)[^\?]+/)
         if (ematch) {
           clipboardActions.push({
             label: l('copyEmailAddress'),
             click: function () {
-                clipboard.writeText(ematch[0])
+              clipboard.writeText(ematch[0])
             }
           })
         }
@@ -242,7 +240,7 @@ const webviewMenu = {
         label: l('goForward'),
         click: function () {
           try {
-            webviews.get(tabs.getSelected()).goForward()
+            webviews.callAsync(tabs.getSelected(), 'goForward')
           } catch (e) {}
         }
       }
@@ -255,7 +253,7 @@ const webviewMenu = {
       {
         label: l('inspectElement'),
         click: function () {
-          webviews.get(tabs.getSelected()).inspectElement(data.x || 0, data.y || 0)
+          webviews.callAsync(tabs.getSelected(), 'inspectElement', [data.x || 0, data.y || 0])
         }
       }
     ])
@@ -294,7 +292,7 @@ const webviewMenu = {
   initialize: function () {
     webviews.bindEvent('context-menu', function (tabId, data) {
       webviewMenu.menuData = data
-      webviews.callAsync(tabs.getSelected(), 'send', ['getContextMenuData', {x: data.x, y: data.y}])
+      webviews.callAsync(tabs.getSelected(), 'send', ['getContextMenuData', { x: data.x, y: data.y }])
     })
     webviews.bindIPC('contextMenuData', function (tabId, args) {
       webviewMenu.showMenu(webviewMenu.menuData, args[0])

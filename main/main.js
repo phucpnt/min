@@ -9,6 +9,18 @@ const session = electron.session
 const ipc = electron.ipcMain
 const Menu = electron.Menu
 const MenuItem = electron.MenuItem
+const crashReporter = electron.crashReporter
+crashReporter.start({
+  submitURL: 'https://minbrowser.org/',
+  uploadToServer: false,
+  compress: true
+})
+
+if (process.argv.some(arg => arg === '-v' || arg === '--version')) {
+  console.log('Min: ' + app.getVersion())
+  console.log('Chromium: ' + process.versions.chrome)
+  process.exit()
+}
 
 let isInstallerRunning = false
 const isDevelopmentMode = process.argv.some(arg => arg === '--development-mode')
@@ -42,17 +54,6 @@ if (isDevelopmentMode) {
 app.commandLine.appendSwitch('disable-backgrounding-occluded-windows', 'true')
 
 var userDataPath = app.getPath('userData')
-
-var dbPath = userDataPath + (process.platform === 'win32' ? '\\IndexedDB\\file__0.indexeddb.leveldb' : '/IndexedDB/file__0.indexeddb.leveldb')
-
-if (process.argv.some(item => item.includes('rename-db'))) {
-  try {
-    fs.renameSync(dbPath, dbPath + '-' + Date.now() + '.recovery')
-  } catch (e) {
-    console.warn('renaming database failed', e)
-    app.quit()
-  }
-}
 
 const browserPage = 'file://' + __dirname + '/index.html'
 
@@ -110,10 +111,10 @@ function handleCommandLineArguments (argv) {
           sendIPCToWindow(mainWindow, 'addTab', {
             url: arg
           })
-        } else if (/[A-Z]:[/\\].*\.html?$/.test(arg)) {
-          // local files on Windows
+        } else if (/\.(m?ht(ml)?|pdf)$/.test(arg) && fs.existsSync(arg)) {
+          // local files (.html, .mht, mhtml, .pdf)
           sendIPCToWindow(mainWindow, 'addTab', {
-            url: 'file://' + arg
+            url: 'file://' + path.resolve(arg)
           })
         }
       }
@@ -180,6 +181,8 @@ function createWindowWithBounds (bounds) {
     backgroundColor: '#fff', // the value of this is ignored, but setting it seems to work around https://github.com/electron/electron/issues/10559
     webPreferences: {
       nodeIntegration: true,
+      contextIsolation: false,
+      enableRemoteModule: true,
       nodeIntegrationInWorker: true, // used by ProcessSpawner
       additionalArguments: [
         '--user-data-path=' + userDataPath,
@@ -285,6 +288,8 @@ function createWindowWithBounds (bounds) {
     }
   })
 
+  mainWindow.setTouchBar(buildTouchBar())
+
   return mainWindow
 }
 
@@ -300,6 +305,7 @@ app.on('window-all-closed', function () {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function () {
+  settings.set('restartNow', false)
   appIsReady = true
 
   /* the installer launches the app to install registry items and shortcuts,
@@ -375,6 +381,10 @@ ipc.on('showSecondaryMenu', function (event, data) {
     x: data.x,
     y: data.y
   })
+})
+
+ipc.on('quit', function () {
+  app.quit()
 })
 
 function registerProtocols () {

@@ -1,8 +1,11 @@
+const EventEmitter = require('events')
+
 const webviews = require('webviews.js')
 const focusMode = require('focusMode.js')
-const urlParser = require('util/urlParser.js')
 const readerView = require('readerView.js')
+const tabAudio = require('tabAudio.js')
 const dragula = require('dragula')
+const settings = require('util/settings/settings.js')
 
 const tabEditor = require('navbar/tabEditor.js')
 const progressBar = require('navbar/progressBar.js')
@@ -11,12 +14,14 @@ const permissionRequests = require('navbar/permissionRequests.js')
 var lastTabDeletion = 0 // TODO get rid of this
 
 const tabBar = {
+  navBar: document.getElementById('navbar'),
   container: document.getElementById('tabs'),
   containerInner: document.getElementById('tabs-inner'),
   tabElementMap: {}, // tabId: tab element
   events: new EventEmitter(),
   dragulaInstance: dragula([document.getElementById('tabs-inner')], {
-    direction: 'horizontal'
+    direction: 'horizontal',
+    slideFactorX: 25
   }),
   getTab: function (tabId) {
     return tabBar.tabElementMap[tabId]
@@ -47,6 +52,7 @@ const tabBar = {
     tabEl.setAttribute('role', 'tab')
 
     tabEl.appendChild(readerView.getButton(data.id))
+    tabEl.appendChild(tabAudio.getButton(data.id))
     tabEl.appendChild(progressBar.create())
 
     // icons
@@ -138,6 +144,10 @@ const tabBar = {
       tabEl.title += ' (' + l('privateTab') + ')'
     }
 
+    // update tab audio icon
+    var audioButton = tabEl.querySelector('.tab-audio-button')
+    tabAudio.updateButton(tabId, audioButton)
+
     tabEl.querySelectorAll('.permission-request-icon').forEach(el => el.remove())
 
     permissionRequests.getButtons(tabId).reverse().forEach(function (button) {
@@ -181,8 +191,19 @@ const tabBar = {
       tabBar.containerInner.removeChild(tabEl)
       delete tabBar.tabElementMap[tabId]
     }
+  },
+  handleDividerPreference: function (dividerPreference) {
+    if (dividerPreference === true) {
+      tabBar.navBar.classList.add('show-dividers')
+    } else {
+      tabBar.navBar.classList.remove('show-dividers')
+    }
   }
 }
+
+settings.listen('showDividerBetweenTabs', function (dividerPreference) {
+  tabBar.handleDividerPreference(dividerPreference)
+})
 
 /* progress bar events */
 
@@ -195,7 +216,8 @@ webviews.bindEvent('did-stop-loading', function (tabId) {
 })
 
 tasks.on('tab-updated', function (id, key) {
-  if (key === 'title' || key === 'secure' || key === 'url') {
+  var updateKeys = ['title', 'secure', 'url', 'muted', 'hasAudio']
+  if (updateKeys.includes(key)) {
     tabBar.updateTab(id)
   }
 })
@@ -215,14 +237,27 @@ if (window.platformType === 'mac') {
 
     var oldTab = tabs.splice(tabs.getIndex(tabId), 1)[0]
 
+    var newIdx
     if (adjacentTabId) {
-      var newIdx = tabs.getIndex(adjacentTabId)
+      newIdx = tabs.getIndex(adjacentTabId)
     } else {
     // tab was inserted at end
-      var newIdx = tabs.count()
+      newIdx = tabs.count()
     }
+
     tabs.splice(newIdx, 0, oldTab)
   })
 }
+
+tabBar.container.addEventListener('dragover', e => e.preventDefault())
+
+tabBar.container.addEventListener('drop', e => {
+  e.preventDefault()
+  var data = e.dataTransfer
+  require('browserUI.js').addTab(tabs.add({
+    url: data.files[0] ? 'file://' + data.files[0].path : data.getData('text'),
+    private: tabs.get(tabs.getSelected()).private
+  }), { enterEditMode: false, openInBackground: !settings.get('openTabsInForeground') })
+})
 
 module.exports = tabBar

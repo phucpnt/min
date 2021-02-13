@@ -1,5 +1,3 @@
-const previewCache = require('previewCache.js')
-var getView = remote.getGlobal('getView')
 var urlParser = require('util/urlParser.js')
 var settings = require('util/settings/settings.js')
 
@@ -10,36 +8,6 @@ var placeholderImg = document.getElementById('webview-placeholder')
 var hasSeparateTitlebar = settings.get('useSeparateTitlebar')
 var windowIsMaximized = false // affects navbar height on Windows
 var windowIsFullscreen = false
-
-function lazyRemoteObject (getObject) {
-  var cachedItem = null
-  return new Proxy({}, {
-    get: function (obj, prop) {
-      if (!cachedItem) {
-        cachedItem = getObject()
-      }
-      return cachedItem[prop]
-    },
-    set: function (obj, prop, value) {
-      if (!cachedItem) {
-        cachedItem = getObject()
-      }
-      cachedItem[prop] = value
-    }
-  })
-}
-
-function forceUpdateDragRegions () {
-  setTimeout(function () {
-    // manually force the drag regions to update to work around https://github.com/electron/electron/issues/14038
-    var d = document.createElement('div')
-    d.setAttribute('style', '-webkit-app-region:drag; width: 1px; height: 1px;')
-    document.body.appendChild(d)
-    setTimeout(function () {
-      document.body.removeChild(d)
-    }, 100)
-  }, 100)
-}
 
 function captureCurrentTab (options) {
   if (tabs.get(tabs.getSelected()).private) {
@@ -88,7 +56,7 @@ function onPageLoad (tabId) {
     setTimeout(function () {
       // sometimes the page isn't visible until a short time after the did-finish-load event occurs
       captureCurrentTab()
-    }, 100)
+    }, 250)
   }
 }
 
@@ -120,9 +88,16 @@ function scrollOnLoad (tabId, scrollPosition) {
   webviews.bindEvent('did-finish-load', listener)
 }
 
+function setAudioMutedOnCreate (tabId, muted) {
+  const listener = function () {
+    webviews.callAsync(tabId, 'setAudioMuted', muted)
+    webviews.unbindEvent('did-navigate', listener)
+  }
+  webviews.bindEvent('did-navigate', listener)
+}
+
 const webviews = {
   viewList: [], // [tabId]
-  tabContentsMap: {}, // tabId: webContents
   viewFullscreenMap: {}, // tabId, isFullscreen
   selectedId: null,
   placeholderRequests: [],
@@ -187,10 +162,10 @@ const webviews = {
 
       const viewMargins = webviews.viewMargins
       return {
-        x: 0 + viewMargins[3],
-        y: 0 + viewMargins[0] + navbarHeight,
-        width: window.innerWidth - (viewMargins[1] + viewMargins[3]),
-        height: window.innerHeight - (viewMargins[0] + viewMargins[2]) - navbarHeight
+        x: 0 + Math.round(viewMargins[3]),
+        y: 0 + Math.round(viewMargins[0]) + navbarHeight,
+        width: window.innerWidth - Math.round(viewMargins[1] + viewMargins[3]),
+        height: window.innerHeight - Math.round(viewMargins[0] + viewMargins[2]) - navbarHeight
       }
     }
   },
@@ -200,6 +175,10 @@ const webviews = {
     // needs to be called before the view is created to that its listeners can be registered
     if (tabData.scrollPosition) {
       scrollOnLoad(tabId, tabData.scrollPosition)
+    }
+
+    if (tabData.muted) {
+      setAudioMutedOnCreate(tabId, tabData.muted)
     }
 
     // if the tab is private, we want to partition it. See http://electron.atom.io/docs/v0.34.0/api/web-view-tag/#partition
@@ -223,17 +202,13 @@ const webviews = {
           sandbox: true,
           enableRemoteModule: false,
           allowPopups: true,
-          partition: partition,
+          partition: partition || 'persist:webcontent',
           enableWebSQL: false,
           autoplayPolicy: 'user-gesture-required'
         }
       }),
       boundsString: JSON.stringify(webviews.getViewBounds()),
       events: webviews.events.map(e => e.event).filter((i, idx, arr) => arr.indexOf(i) === idx)
-    })
-
-    const contents = lazyRemoteObject(function () {
-      return getView(tabId).webContents
     })
 
     if (tabData.url) {
@@ -243,7 +218,6 @@ const webviews = {
       ipc.send('loadURLInView', { id: tabData.id, url: urlParser.parse('min://newtab') })
     }
 
-    webviews.tabContentsMap[tabId] = contents
     webviews.viewList.push(tabId)
   },
   setSelected: function (id, options) { // options.focus - whether to focus the view. Defaults to true.
@@ -268,8 +242,6 @@ const webviews = {
       focus: !options || options.focus !== false
     })
     webviews.emitEvent('view-shown', id)
-
-    forceUpdateDragRegions()
   },
   update: function (id, url) {
     ipc.send('loadURLInView', { id: id, url: urlParser.parse(url) })
@@ -281,14 +253,10 @@ const webviews = {
       webviews.viewList.splice(webviews.viewList.indexOf(id), 1)
       ipc.send('destroyView', id)
     }
-    delete webviews.tabContentsMap[id]
     delete webviews.viewFullscreenMap[id]
     if (webviews.selectedId === id) {
       webviews.selectedId = null
     }
-  },
-  get: function (id) {
-    return webviews.tabContentsMap[id]
   },
   requestPlaceholder: function (reason) {
     if (reason && !webviews.placeholderRequests.includes(reason)) {
@@ -297,8 +265,8 @@ const webviews = {
     if (webviews.placeholderRequests.length >= 1) {
       // create a new placeholder
 
-      var img = previewCache.get(webviews.selectedId)
-      var associatedTab = tabs.get(webviews.selectedId)
+      var associatedTab = tasks.getTaskContainingTab(webviews.selectedId).tabs.get(webviews.selectedId)
+      var img = associatedTab.previewImage
       if (img) {
         placeholderImg.src = img
         placeholderImg.hidden = false
@@ -331,7 +299,6 @@ const webviews = {
           focus: true
         })
         webviews.emitEvent('view-shown', webviews.selectedId)
-        forceUpdateDragRegions()
       }
       // wait for the view to be visible before removing the placeholder
       setTimeout(function () {
@@ -357,6 +324,10 @@ const webviews = {
     // probably either an error page (after  a redirect from the original page) or reader view
     var url = tabs.get(id).url
 
+    webviews.callAsync(id, 'goBack')
+
+    // TODO not working in Electron 11
+    /*
     var isInternalURL = urlParser.isInternalURL(url)
     if (isInternalURL) {
       var representedURL = urlParser.getSourceURL(url)
@@ -374,7 +345,7 @@ const webviews = {
       })
     } else {
       webviews.callAsync(id, 'goBack')
-    }
+    } */
   },
   /*
   Can be called as
@@ -451,6 +422,10 @@ ipc.on('leave-full-screen', function () {
 
 webviews.bindEvent('did-start-navigation', onNavigate)
 webviews.bindEvent('will-redirect', onNavigate)
+webviews.bindEvent('did-navigate', function (tabId, url, httpResponseCode, httpStatusText) {
+  onPageURLChange(tabId, url)
+})
+
 webviews.bindEvent('did-finish-load', onPageLoad)
 
 webviews.bindEvent('page-title-updated', function (tabId, title, explicitSet) {
@@ -537,10 +512,10 @@ ipc.on('view-ipc', function (e, args) {
 
 setInterval(function () {
   captureCurrentTab()
-}, 30000)
+}, 15000)
 
 ipc.on('captureData', function (e, data) {
-  previewCache.set(data.id, data.url)
+  tabs.update(data.id, { previewImage: data.url })
   if (data.id === webviews.selectedId && webviews.placeholderRequests.length > 0) {
     placeholderImg.src = data.url
     placeholderImg.hidden = false
